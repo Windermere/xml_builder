@@ -5,10 +5,10 @@ defmodule XmlBuilder do
   ## Examples
 
       iex> XmlBuilder.doc(:person)
-      "<?xml version=\\\"1.0\\\" encoding=\\\"UTF-8\\\"?>\\n<person/>"
+      "<?xml version=\\\"1.0\\\" encoding=\\\"UTF-8\\\"?><person/>"
 
       iex> XmlBuilder.doc(:person, "Josh")
-      "<?xml version=\\\"1.0\\\" encoding=\\\"UTF-8\\\"?>\\n<person>Josh</person>"
+      "<?xml version=\\\"1.0\\\" encoding=\\\"UTF-8\\\"?><person>Josh</person>"
 
       iex> XmlBuilder.element(:person, "Josh") |> XmlBuilder.generate
       "<person>Josh</person>"
@@ -37,13 +37,13 @@ defmodule XmlBuilder do
   ## Examples
 
       iex> XmlBuilder.doc(:person)
-      "<?xml version=\\\"1.0\\\" encoding=\\\"UTF-8\\\"?>\\n<person/>"
+      "<?xml version=\\\"1.0\\\" encoding=\\\"UTF-8\\\"?><person/>"
 
       iex> XmlBuilder.doc(:person, %{id: 1})
-      "<?xml version=\\\"1.0\\\" encoding=\\\"UTF-8\\\"?>\\n<person id=\\\"1\\\"/>"
+      "<?xml version=\\\"1.0\\\" encoding=\\\"UTF-8\\\"?><person id=\\\"1\\\"/>"
 
       iex> XmlBuilder.doc(:person, %{id: 1}, "some data")
-      "<?xml version=\\\"1.0\\\" encoding=\\\"UTF-8\\\"?>\\n<person id=\\\"1\\\">some data</person>"
+      "<?xml version=\\\"1.0\\\" encoding=\\\"UTF-8\\\"?><person id=\\\"1\\\">some data</person>"
   """
   def doc(elements),
     do: [:xml_decl | elements_with_prolog(elements) |> List.wrap] |> generate
@@ -196,28 +196,28 @@ defmodule XmlBuilder do
     do: format({nil, nil, string}, level)
 
   defp format(list, level) when is_list(list),
-    do: list |> Enum.map(&format(&1, level)) |> Enum.intersperse("\n")
+    do: list |> Enum.map(&format(&1, level)) |> Enum.intersperse("")
 
   defp format({nil, nil, name}, level) when is_bitstring(name),
-    do: [indent(level), to_string(name)]
+    do: [to_string(name)]
 
   defp format({name, attrs, content}, level) when is_blank_attrs(attrs) and is_blank_list(content),
-    do: [indent(level), '<', to_string(name), '/>']
+    do: ['<', to_string(name), '/>']
 
   defp format({name, attrs, content}, level) when is_blank_list(content),
-    do: [indent(level), '<', to_string(name), ' ', format_attributes(attrs), '/>']
+    do: ['<', to_string(name), ' ', format_attributes(attrs), '/>']
 
   defp format({name, attrs, content}, level) when is_blank_attrs(attrs) and not is_list(content),
-    do: [indent(level), '<', to_string(name), '>', format_content(content, level+1), '</', to_string(name), '>']
+    do: ['<', to_string(name), '>', format_content(content, level+1), '</', to_string(name), '>']
 
   defp format({name, attrs, content}, level) when is_blank_attrs(attrs) and is_list(content),
-    do: [indent(level), '<', to_string(name), '>', format_content(content, level+1), '\n', indent(level), '</', to_string(name), '>']
+    do: ['<', to_string(name), '>', format_content(content, level+1), '', '</', to_string(name), '>']
 
   defp format({name, attrs, content}, level) when not is_blank_attrs(attrs) and not is_list(content),
-    do: [indent(level), '<', to_string(name), ' ', format_attributes(attrs), '>', format_content(content, level+1), '</', to_string(name), '>']
+    do: ['<', to_string(name), ' ', format_attributes(attrs), '>', format_content(content, level+1), '</', to_string(name), '>']
 
   defp format({name, attrs, content}, level) when not is_blank_attrs(attrs) and is_list(content),
-    do: [indent(level), '<', to_string(name), ' ', format_attributes(attrs), '>', format_content(content, level+1), '\n', indent(level), '</', to_string(name), '>']
+    do: ['<', to_string(name), ' ', format_attributes(attrs), '>', format_content(content, level+1), '', '</', to_string(name), '>']
 
   defp elements_with_prolog([first | rest]) when length(rest) > 0,
     do: [first_element(first) |element(rest)]
@@ -232,7 +232,7 @@ defmodule XmlBuilder do
     do: element(element_spec)
 
   defp format_content(children, level) when is_list(children),
-    do: ['\n', Enum.map_join(children, "\n", &format(&1, level))]
+    do: ['', Enum.map_join(children, "", &format(&1, level))]
 
   defp format_content(content, _level),
     do: escape(content)
@@ -241,7 +241,7 @@ defmodule XmlBuilder do
     do: Enum.map_join(attrs, " ", fn {name,value} -> [to_string(name), '=', quote_attribute_value(value)] end)
 
   defp indent(level),
-    do: String.duplicate("\t", level)
+    do: String.duplicate("", level)
 
   defp quote_attribute_value(val) when not is_bitstring(val),
     do: quote_attribute_value(to_string(val))
